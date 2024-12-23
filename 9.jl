@@ -15,108 +15,57 @@ function HorizonSideRobots.move!(robot, side, num_steps::Integer)
     end
 end
 
-function Ost_way!(robot)
-    OstRes = []
-    while !isborder(robot,Ost)
-        push!(OstRes,do_upora!(robot,Ost))
-    end
-    return OstRes
-end
-
-function West_way!(robot)
-    WestRes = []
-    while !isborder(robot,West)
-        push!(WestRes,do_upora!(robot,West))
-    end
-    return WestRes
-end
-
-function Nord_way!(robot)
-    NordRes = []
-    while !isborder(robot,Nord)
-        push!(NordRes,do_upora!(robot,Nord))
-    end
-    return NordRes
-end
-
-function Sud_way!(robot)
-    SudRes = []
-    while !isborder(robot,Sud)
-        push!(SudRes,do_upora!(robot,Sud))
-    end
-    return SudRes
-end
-
 function inverse(side)
     return HorizonSide((Int(side)+2)%4)
 end
 
-function super_chess!(robot)
-    NordRes = Nord_way!(robot)
-    OstRes = Ost_way!(robot)
-    move!(robot,West,OstRes[begin])
-    move!(robot,Sud,NordRes[begin])
-    SudRes = Sud_way!(robot)
-    WestRes = West_way!(robot)
-    move!(robot,Ost,WestRes[begin])
-    move!(robot,Nord,SudRes[begin])
-    putmarker!(robot)
-    side = (Ost,West)
-    for s in side
-        while !isborder(robot,Nord)
-            n = 0
-            while !isborder(robot,s)
-                move!(robot,s)
-                n += 1
-                if n%2 == 0
-                    putmarker!(robot)
-                end
-                if isborder(robot,s) && !isborder(robot,Nord)
-                    move!(robot,Nord)
-                    n += 1
-                    s = inverse(s)
-                    if n%2 == 0
-                        putmarker!(robot)
-                    end
-                end
-                if isborder(robot,s) && isborder(robot,Nord)
-                    do_upora!(robot,Ost)
-                    move!(robot,West,OstRes[begin])
-                    move!(robot,Sud,NordRes[begin])
-                    break
-                end
-            end
-            if ismarker(robot)
-                break
+function go!(robot, side::HorizonSide, s::HorizonSide)
+    n = 0
+    while !isborder(robot,side)
+        move!(robot,side)
+        n+=1
+        if n%2==0
+            putmarker!(robot)
+        end
+        if isborder(robot,side) && !isborder(robot,s)
+            move!(robot,s)
+            n += 1
+            side = inverse(side)
+            if n%2==0
+                putmarker!(robot)
             end
         end
-        s = inverse(s)
-        while !isborder(robot,Sud)
-            n = 0
-            while !isborder(robot,s)
-                move!(robot,s)
-                n += 1
-                if n%2 == 0
-                    putmarker!(robot)
-                end
-                if isborder(robot,s) && !isborder(robot,Sud)
-                    move!(robot,Sud)
-                    n += 1
-                    s = inverse(s)
-                    if n%2 == 0
-                        putmarker!(robot)
-                    end
-                end
-                if isborder(robot,s) && isborder(robot,Sud)
-                    do_upora!(robot,West)
-                    move!(robot,Ost,WestRes[begin])
-                    move!(robot,Nord,SudRes[begin])
-                    break
-                end
-            end
-            if ismarker(robot)
-                break
-            end
+        if isborder(robot,s) && isborder(robot,side)
+            do_upora!(robot,Ost)
+            break
         end
     end
+end
+
+function cross_board!(robot, side::HorizonSide, s::HorizonSide)
+    putmarker!(robot)
+    while !isborder(robot,s)
+        go!(robot,side,s)
+    end
+end
+
+function super_chess!(robot)
+    y1 = do_upora!(robot,Nord)
+    x1 = do_upora!(robot,Ost)
+    move!(robot,Sud,y1)
+    move!(robot,West,x1)
+    y2 = do_upora!(robot,Sud)
+    x2 = do_upora!(robot,West)
+    move!(robot,Nord,y2)
+    move!(robot,Ost,x2)
+    side = Ost
+    s = Nord
+    cross_board!(robot,side,s)
+    move!(robot,West,x1)
+    move!(robot,Sud,y1)
+    s = inverse(s)
+    side = inverse(side)
+    cross_board!(robot,side,s)
+    move!(robot,West,x1)
+    move!(robot,Nord,y2)
 end
